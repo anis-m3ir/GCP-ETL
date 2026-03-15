@@ -257,6 +257,17 @@ resource "google_project_iam_member" "artifact_registry_admin" {
   member  = "serviceAccount:${google_service_account.service_account.email}"
 }
 
+resource "google_project_iam_member" "service_usage_admin" {
+  project = var.project_id
+  role    = "roles/serviceusage.serviceUsageAdmin"
+  member  = "serviceAccount:${google_service_account.service_account.email}"
+}
+
+resource "google_project_iam_member" "iam_service_account_admin" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountAdmin"
+  member  = "serviceAccount:${google_service_account.service_account.email}"
+}
 # EVENTARC
 resource "google_eventarc_trigger" "trigger" {
   name            = "retail-dga-trigger"

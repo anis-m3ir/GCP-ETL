@@ -7,6 +7,7 @@ steps:
       - -c
       - |
         terraform init \
+          -reconfigure \
           -backend-config="bucket=${_TF_STATE_BUCKET}"
 
   - name: hashicorp/terraform:1.6.6

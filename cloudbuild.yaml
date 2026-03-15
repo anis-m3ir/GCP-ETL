@@ -1,4 +1,5 @@
 steps:
+  # Step 1: Initialize Terraform
   - name: hashicorp/terraform:1.6.6
     id: terraform-init
     dir: infra
@@ -8,8 +9,10 @@ steps:
       - |
         terraform init \
           -reconfigure \
-          -backend-config="bucket=${_TF_STATE_BUCKET}"
-
+          -backend-config="bucket=${_TF_STATE_BUCKET}" \
+          -backend-config="prefix=${_TF_STATE_PREFIX}"
+ 
+  # Step 2: Configure Docker for Artifact Registry
   - name: gcr.io/cloud-builders/gcloud
     id: configure-docker
     args:
@@ -17,7 +20,8 @@ steps:
       - configure-docker
       - "${_AR_REGION}-docker.pkg.dev"
       - --quiet
-
+ 
+  # Step 3: Build and push custom dbt image
   - name: gcr.io/cloud-builders/docker
     id: build-dbt-job-image
     entrypoint: bash
@@ -28,15 +32,23 @@ steps:
         DEST_IMAGE="${_AR_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_DBT_JOB_IMAGE_NAME}:${_DBT_JOB_IMAGE_TAG}"
         docker build -f dbt-code/Dockerfile -t "$${DEST_IMAGE}" dbt-code
         docker push "$${DEST_IMAGE}"
-
+ 
+  # Step 4: Terraform plan with custom image
   - name: hashicorp/terraform:1.6.6
     id: terraform-plan
     dir: infra
     entrypoint: sh
     args:
       - -c
-      - terraform plan -var="project_id=${PROJECT_ID}" -var="github_owner=${_GITHUB_OWNER}" -var="github_repo_name=${_GITHUB_REPO}" -var="dbt_image=${_AR_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_DBT_JOB_IMAGE_NAME}:${_DBT_JOB_IMAGE_TAG}" -out=tfplan
-
+      - |
+        terraform plan \
+          -var="project_id=${PROJECT_ID}" \
+          -var="github_owner=${_GITHUB_OWNER}" \
+          -var="github_repo_name=${_GITHUB_REPO}" \
+          -var="dbt_image=${_AR_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_DBT_JOB_IMAGE_NAME}:${_DBT_JOB_IMAGE_TAG}" \
+          -out=tfplan
+ 
+  # Step 5: Terraform apply
   - name: hashicorp/terraform:1.6.6
     id: terraform-apply
     dir: infra
@@ -46,17 +58,18 @@ steps:
       - |
         echo "Terraform apply"
         terraform apply -auto-approve tfplan
-
+ 
 substitutions:
-  _TF_STATE_BUCKET: retail-etl-tfstate-ag
-  _AR_REGION: europe-west1
-  _AR_REPO: dbt-images
+  _TF_STATE_BUCKET:    retail-etl-tfstate-ag
+  _TF_STATE_PREFIX:    terraform/infra
+  _AR_REGION:          europe-west1
+  _AR_REPO:            dbt-images
   _DBT_JOB_IMAGE_NAME: dbt-etl-job
-  _DBT_JOB_IMAGE_TAG: latest
-  _GITHUB_OWNER: "anis-m3ir"
-  _GITHUB_REPO: "GCP-ETL"
-
+  _DBT_JOB_IMAGE_TAG:  latest
+  _GITHUB_OWNER:       anis-m3ir
+  _GITHUB_REPO:        GCP-ETL
+ 
 options:
   logging: CLOUD_LOGGING_ONLY
-
+ 
 serviceAccount: 'projects/retail-etl-489114/serviceAccounts/retail-etl-sa@retail-etl-489114.iam.gserviceaccount.com'

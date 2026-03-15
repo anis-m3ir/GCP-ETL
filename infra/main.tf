@@ -251,36 +251,6 @@ resource "google_project_iam_member" "run_developer" {
   member  = "serviceAccount:${google_service_account.service_account.email}"
 }
 
-resource "google_project_iam_member" "artifact_registry_admin" {
-  project = var.project_id
-  role    = "roles/artifactregistry.admin"
-  member  = "serviceAccount:${google_service_account.service_account.email}"
-}
-
-resource "google_project_iam_member" "service_usage_admin" {
-  project = var.project_id
-  role    = "roles/serviceusage.serviceUsageAdmin"
-  member  = "serviceAccount:${google_service_account.service_account.email}"
-}
-
-resource "google_project_iam_member" "iam_service_account_admin" {
-  project = var.project_id
-  role    = "roles/iam.serviceAccountAdmin"
-  member  = "serviceAccount:${google_service_account.service_account.email}"
-}
-
-resource "google_project_iam_member" "project_iam_admin" {
-  project = var.project_id
-  role    = "roles/resourcemanager.projectIamAdmin"
-  member  = "serviceAccount:${google_service_account.service_account.email}"
-}
-
-resource "google_project_iam_member" "workflows_admin" {
-  project = var.project_id
-  role    = "roles/workflows.admin"
-  member  = "serviceAccount:${google_service_account.service_account.email}"
-}
-
 # EVENTARC
 resource "google_eventarc_trigger" "trigger" {
   name            = "retail-dga-trigger"
@@ -311,7 +281,14 @@ resource "google_secret_manager_secret_version" "dbt_keyfile_version" {
   secret_data = base64decode(google_service_account_key.dbt_sa_key.private_key)
 }
 
+resource "google_project_iam_member" "cloudbuild_editor" {
+  project = var.project_id
+  role    = "roles/cloudbuild.builds.editor"
+  member  = "serviceAccount:${google_service_account.service_account.email}"
+}
 
+#terraform to create Cloud Build trigger for all git branches
+# google_cloudbuild_trigger.terraform_all_branches:
 resource "google_cloudbuild_trigger" "terraform_all_branches" {
   location    = "europe-west1"
   name        = var.cloudbuild_trigger_name

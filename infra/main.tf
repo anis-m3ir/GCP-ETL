@@ -162,6 +162,30 @@ resource "google_project_iam_member" "storage_object_admin" {
   member  = "serviceAccount:${google_service_account.service_account.email}"
 }
 
+resource "google_project_iam_member" "project_iam_admin" {
+  project = var.project_id
+  role    = "roles/resourcemanager.projectIamAdmin"
+  member  = "serviceAccount:${google_service_account.service_account.email}"
+}
+
+resource "google_project_iam_member" "service_usage_admin" {
+  project = var.project_id
+  role    = "roles/serviceusage.serviceUsageAdmin"
+  member  = "serviceAccount:${google_service_account.service_account.email}"
+}
+
+resource "google_project_iam_member" "workflows_admin" {
+  project = var.project_id
+  role    = "roles/workflows.admin"
+  member  = "serviceAccount:${google_service_account.service_account.email}"
+}
+
+resource "google_project_iam_member" "iam_sa_admin" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountAdmin"
+  member  = "serviceAccount:${google_service_account.service_account.email}"
+}
+
 # Self-impersonation pour Cloud Build trigger
 resource "google_service_account_iam_member" "sa_self_impersonation" {
   service_account_id = google_service_account.service_account.name

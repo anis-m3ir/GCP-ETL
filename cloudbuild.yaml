@@ -72,4 +72,4 @@ substitutions:
 options:
   logging: CLOUD_LOGGING_ONLY
  
-serviceAccount: 'projects/retail-etl-489114/serviceAccounts/retail-etl-sa@retail-etl-489114.iam.gserviceaccount.com'
+serviceAccount: 'projects/retail-etl-489114/serviceAccounts/retail-etl-cicd@retail-etl-489114.iam.gserviceaccount.com'

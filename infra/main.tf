@@ -282,28 +282,29 @@ resource "google_secret_manager_secret_version" "dbt_keyfile_version" {
 }
 
 
-#terraform to create Cloud Build trigger for all git branches
-# google_cloudbuild_trigger.terraform_all_branches:
 resource "google_cloudbuild_trigger" "terraform_all_branches" {
-  lifecycle {
-    ignore_changes = all
-  }
-  
-  project  = var.project_id
-  name     = var.cloudbuild_trigger_name
-  location = "global"
-  filename = "cloudbuild.yaml"
+  location    = "europe-west1"
+  name        = var.cloudbuild_trigger_name
+  description = "Run Terraform pipeline on every branch push"
 
-  github {
-    owner = var.github_owner
-    name  = var.github_repo_name
+  repository_event_config {
+    repository = "projects/retail-etl-489114/locations/europe-west1/connections/retail-etl-git/repositories/anis-m3ir-GCP-ETL"
     push {
       branch = var.cloudbuild_trigger_branch_regex
     }
   }
 
+  filename        = "cloudbuild.yaml"
+  service_account = "projects/${var.project_id}/serviceAccounts/retail-etl-sa@${var.project_id}.iam.gserviceaccount.com"
+
   substitutions = {
-    _TF_STATE_BUCKET = var.tf_state_bucket
-    _TF_STATE_PREFIX = var.tf_state_prefix
+    _TF_STATE_BUCKET    = var.tf_state_bucket
+    _TF_STATE_PREFIX    = var.tf_state_prefix
+    _AR_REGION          = var.region
+    _AR_REPO            = var.ar_repo_name
+    _DBT_JOB_IMAGE_NAME = "dbt-etl-job"
+    _DBT_JOB_IMAGE_TAG  = "latest"
+    _GITHUB_OWNER       = var.github_owner
+    _GITHUB_REPO        = var.github_repo_name
   }
 }

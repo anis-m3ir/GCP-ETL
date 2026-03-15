@@ -117,6 +117,44 @@ resource "google_project_service" "cloud_run_api" {
   service = "run.googleapis.com"
 }
 
+resource "google_project_service" "secret_manager_api" {
+  service = "secretmanager.googleapis.com"
+}
+
+# Secret Manager secret to store dbt service account key
+resource "google_secret_manager_secret" "dbt_keyfile" {
+  secret_id = "dbt-service-account-key"
+  depends_on = [google_project_service.secret_manager_api]
+  replication {
+    auto {}  # Automatic replication across regions
+  }
+
+  labels = {
+    managed_by = "terraform"
+    component  = "dbt"
+  }
+}
+
+# Grant the Cloud Run service account access to read the secret
+resource "google_secret_manager_secret_iam_member" "dbt_secret_accessor" {
+  secret_id = google_secret_manager_secret.dbt_keyfile.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.service_account.email}"
+}
+
+# Grant BigQuery permissions to service account
+resource "google_project_iam_member" "dbt_bigquery_user" {
+  project = var.project_id
+  role    = "roles/bigquery.dataEditor"
+  member  = "serviceAccount:${google_service_account.service_account.email}"
+}
+
+resource "google_project_iam_member" "dbt_bigquery_job_user" {
+  project = var.project_id
+  role    = "roles/bigquery.jobUser"
+  member  = "serviceAccount:${google_service_account.service_account.email}"
+}
+
 # terraform to enable Artifact Registry API
 resource "google_project_service" "artifact_registry_api" {
   service = "artifactregistry.googleapis.com"
@@ -155,6 +193,13 @@ resource "google_project_iam_member" "eventarc_admin" {
 resource "google_project_iam_member" "eventarc_storage_check" {
   project = var.project_id
   role    = "roles/storage.admin"
+  member  = "serviceAccount:${google_service_account.service_account.email}"
+}
+
+# terraform to grant roles eventarc admin to service account
+resource "google_project_iam_member" "gcs_pubsub_publisher" {
+  project = var.project_id
+  role    = "roles/pubsub.publisher"
   member  = "serviceAccount:${google_service_account.service_account.email}"
 }
 
@@ -208,5 +253,43 @@ resource "google_eventarc_trigger" "trigger" {
 
   destination {
     workflow = google_workflows_workflow.workflow.id
+  }
+}
+
+# 1. Génère automatiquement une clé pour le service account
+resource "google_service_account_key" "dbt_sa_key" {
+  service_account_id = google_service_account.service_account.name
+}
+
+# 2. La pousse automatiquement dans Secret Manager
+resource "google_secret_manager_secret_version" "dbt_keyfile_version" {
+  secret      = google_secret_manager_secret.dbt_keyfile.id
+  secret_data = base64decode(google_service_account_key.dbt_sa_key.private_key)
+}
+
+
+#terraform to create Cloud Build trigger for all git branches
+# google_cloudbuild_trigger.terraform_all_branches:
+resource "google_cloudbuild_trigger" "terraform_all_branches" {
+  lifecycle {
+    ignore_changes = all
+  }
+  
+  project  = var.project_id
+  name     = var.cloudbuild_trigger_name
+  location = "global"
+  filename = "cloudbuild.yaml"
+
+  github {
+    owner = var.github_owner
+    name  = var.github_repo_name
+    push {
+      branch = var.cloudbuild_trigger_branch_regex
+    }
+  }
+
+  substitutions = {
+    _TF_STATE_BUCKET = var.tf_state_bucket
+    _TF_STATE_PREFIX = var.tf_state_prefix
   }
 }

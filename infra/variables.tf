@@ -18,7 +18,7 @@ variable "dbt_job_name" {
 
 variable "dbt_image" {
   type        = string
-  default     = "docker.io/dbt-labs/dbt-bigquery:1.8.2"
+  default     = "europe-west1-docker.pkg.dev/retail-etl-489114/dbt-images/dbt-etl-job:latest"
   description = "Container image used by Cloud Run Job to run dbt with BigQuery"
 }
 
@@ -42,11 +42,26 @@ variable "ar_repo_name" {
 }
 
 variable "github_owner" {
-    type = string
-        description = "Ganis-m3ir"
+  type        = string
+  default     = "anis-m3ir"
+  description = "GitHub owner"
 }
 
 variable "github_repo_name" {
-    type = string
-        description = "GCP-ETL"
+  type        = string
+  default     = "GCP-ETL"
+  description = "GitHub repository name"
 }
+
+variable "cloudbuild_trigger_name" {
+    type = string
+    default  = "retail-etl-all-branches"
+            description = "Cloud Build trigger name for Terraform pipeline"
+}
+
+variable "cloudbuild_trigger_branch_regex" {
+    type = string
+    default  = ".*"
+}
+
+

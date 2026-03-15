@@ -14,7 +14,7 @@ WITH datetime_cte AS (
       ELSE
         NULL
     END AS date_part,
-  FROM {{ source('retail_dsy', 'raw_invoice') }}
+  FROM {{ source('retail_dga', 'raw_invoice') }}
   WHERE InvoiceDate IS NOT NULL
 )
 SELECT

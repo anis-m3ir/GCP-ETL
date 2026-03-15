@@ -2,8 +2,8 @@
 version: 2
 
 sources:
-  - name: retail_dsy
-    database: retail-etl # Put the project id!
+  - name: retail_dga
+    database: retail-etl-489114 # Put the project id!
 
     tables:
       - name: raw_invoice

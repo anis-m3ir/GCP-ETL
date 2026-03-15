@@ -1,11 +1,10 @@
 # GCS Bucket - stockage des fichiers CSV
 resource "google_storage_bucket" "bucket" {
-  name          = "retail-etl-dga"
-  location      = "EU"
-  uniform_bucket_level_access = true 
-  force_destroy = true
+  name                        = "retail-etl-dga"
+  location                    = "EU"
+  uniform_bucket_level_access = true
+  force_destroy               = true
 }
-
 
 # BigQuery Dataset
 resource "google_bigquery_dataset" "dataset" {
@@ -21,78 +20,36 @@ resource "google_bigquery_table" "raw_country" {
   table_id   = "raw_country"
   schema     = <<EOF
   [
-    {
-      "name": "id",
-      "type": "STRING"
-    },
-    {
-      "name": "iso",
-      "type": "STRING"
-    },
-    {
-      "name": "name",
-      "type": "STRING"
-    },
-    {
-      "name": "nicename",
-      "type": "STRING"
-    },
-    {
-      "name": "iso3",
-      "type": "STRING"
-    },
-    {
-      "name": "numcode",
-      "type": "STRING"
-    },
-    {
-      "name": "phonecode",
-      "type": "STRING"
-    }]
+    {"name": "id",        "type": "STRING"},
+    {"name": "iso",       "type": "STRING"},
+    {"name": "name",      "type": "STRING"},
+    {"name": "nicename",  "type": "STRING"},
+    {"name": "iso3",      "type": "STRING"},
+    {"name": "numcode",   "type": "STRING"},
+    {"name": "phonecode", "type": "STRING"}
+  ]
   EOF
 }
-# terraform to create table raw_invoice  InvoiceNo,StockCode,Description,Quantity,InvoiceDate,UnitPrice,CustomerID,Country
+
+# terraform to create table raw_invoice
 resource "google_bigquery_table" "raw_invoice" {
   dataset_id = "retail_dga"
   table_id   = "raw_invoice"
   schema     = <<EOF
   [
-    {
-      "name": "InvoiceNo",
-      "type": "STRING"
-    },
-    {
-      "name": "StockCode",
-      "type": "STRING"
-    },
-    {
-      "name": "Description",
-      "type": "STRING"
-    },
-    {
-      "name": "Quantity",
-      "type": "STRING"
-    },
-    {
-      "name": "InvoiceDate",
-      "type": "STRING"
-    },
-    {
-      "name": "UnitPrice",
-      "type": "STRING"
-    },
-    {
-      "name": "CustomerID",
-      "type": "STRING"
-    },
-    {
-      "name": "Country",
-      "type": "STRING"
-    }]
+    {"name": "InvoiceNo",   "type": "STRING"},
+    {"name": "StockCode",   "type": "STRING"},
+    {"name": "Description", "type": "STRING"},
+    {"name": "Quantity",    "type": "STRING"},
+    {"name": "InvoiceDate", "type": "STRING"},
+    {"name": "UnitPrice",   "type": "STRING"},
+    {"name": "CustomerID",  "type": "STRING"},
+    {"name": "Country",     "type": "STRING"}
+  ]
   EOF
 }
 
-#WORKFLOOOOOOW
+# WORKFLOW
 resource "google_workflows_workflow" "workflow" {
   name            = "retail-dga-workflow"
   description     = "Retail Dataset Workflow"
@@ -101,7 +58,7 @@ resource "google_workflows_workflow" "workflow" {
   service_account = google_service_account.service_account.email
 }
 
-# terraform to enable Identity and Access Management (IAM) API
+# terraform to enable IAM API
 resource "google_project_service" "service" {
   service = "iam.googleapis.com"
 }
@@ -112,34 +69,21 @@ resource "google_service_account" "service_account" {
   display_name = "Retail ETL SA"
 }
 
+# Self-impersonation pour Cloud Build trigger
+resource "google_service_account_iam_member" "sa_self_impersonation" {
+  service_account_id = google_service_account.service_account.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.service_account.email}"
+}
+
 # terraform to enable Cloud Run API
 resource "google_project_service" "cloud_run_api" {
   service = "run.googleapis.com"
 }
 
+# terraform to enable Secret Manager API
 resource "google_project_service" "secret_manager_api" {
   service = "secretmanager.googleapis.com"
-}
-
-# Secret Manager secret to store dbt service account key
-resource "google_secret_manager_secret" "dbt_keyfile" {
-  secret_id = "dbt-service-account-key"
-  depends_on = [google_project_service.secret_manager_api]
-  replication {
-    auto {}  # Automatic replication across regions
-  }
-
-  labels = {
-    managed_by = "terraform"
-    component  = "dbt"
-  }
-}
-
-# Grant the Cloud Run service account access to read the secret
-resource "google_secret_manager_secret_iam_member" "dbt_secret_accessor" {
-  secret_id = google_secret_manager_secret.dbt_keyfile.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.service_account.email}"
 }
 
 # Grant BigQuery permissions to service account
@@ -189,7 +133,6 @@ resource "google_project_iam_member" "eventarc_admin" {
   member  = "serviceAccount:${google_service_account.service_account.email}"
 }
 
-# terraform to grant roles eventarc admin to service account
 resource "google_project_iam_member" "eventarc_storage_check" {
   project = var.project_id
   role    = "roles/storage.admin"
@@ -210,10 +153,16 @@ resource "google_project_iam_member" "logging_writer" {
   member  = "serviceAccount:${google_service_account.service_account.email}"
 }
 
-# terraform to grant roles eventarc admin to service account
 resource "google_project_iam_member" "gcs_pubsub_publisher" {
   project = var.project_id
   role    = "roles/pubsub.publisher"
+  member  = "serviceAccount:${google_service_account.service_account.email}"
+}
+
+# Permission Cloud Build
+resource "google_project_iam_member" "cloudbuild_editor" {
+  project = var.project_id
+  role    = "roles/cloudbuild.builds.editor"
   member  = "serviceAccount:${google_service_account.service_account.email}"
 }
 
@@ -264,31 +213,12 @@ resource "google_eventarc_trigger" "trigger" {
     attribute = "bucket"
     value     = google_storage_bucket.bucket.name
   }
-
   destination {
     workflow = google_workflows_workflow.workflow.id
   }
 }
 
-# 1. Génère automatiquement une clé pour le service account
-resource "google_service_account_key" "dbt_sa_key" {
-  service_account_id = google_service_account.service_account.name
-}
-
-# 2. La pousse automatiquement dans Secret Manager
-resource "google_secret_manager_secret_version" "dbt_keyfile_version" {
-  secret      = google_secret_manager_secret.dbt_keyfile.id
-  secret_data = base64decode(google_service_account_key.dbt_sa_key.private_key)
-}
-
-resource "google_project_iam_member" "cloudbuild_editor" {
-  project = var.project_id
-  role    = "roles/cloudbuild.builds.editor"
-  member  = "serviceAccount:${google_service_account.service_account.email}"
-}
-
-#terraform to create Cloud Build trigger for all git branches
-# google_cloudbuild_trigger.terraform_all_branches:
+# Cloud Build trigger
 resource "google_cloudbuild_trigger" "terraform_all_branches" {
   location    = "europe-west1"
   name        = var.cloudbuild_trigger_name
@@ -314,4 +244,6 @@ resource "google_cloudbuild_trigger" "terraform_all_branches" {
     _GITHUB_OWNER       = var.github_owner
     _GITHUB_REPO        = var.github_repo_name
   }
+
+  depends_on = [google_service_account_iam_member.sa_self_impersonation]
 }

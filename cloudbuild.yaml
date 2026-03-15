@@ -10,20 +10,6 @@ steps:
           -reconfigure \
           -backend-config="bucket=${_TF_STATE_BUCKET}"
 
-  - name: hashicorp/terraform:1.6.6
-    id: terraform-apply-ar-repo
-    dir: infra
-    entrypoint: sh
-    args:
-      - -c
-      - |
-        echo "Apply AR repo"
-        terraform apply -auto-approve \
-          -var="project_id=${PROJECT_ID}" \
-          -var="github_owner=${_GITHUB_OWNER}" \
-          -var="github_repo_name=${_GITHUB_REPO}" \
-          -target=google_artifact_registry_repository.dbt_images
-
   - name: gcr.io/cloud-builders/gcloud
     id: configure-docker
     args:

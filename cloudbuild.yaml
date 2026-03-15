@@ -62,13 +62,15 @@ steps:
         terraform apply -auto-approve tfplan
 
 substitutions:
-  _TF_STATE_BUCKET: retail-etl-tfstate
+  _TF_STATE_BUCKET: retail-etl-tfstate-ag
   _AR_REGION: europe-west1
   _AR_REPO: dbt-images
   _DBT_JOB_IMAGE_NAME: dbt-etl-job
   _DBT_JOB_IMAGE_TAG: latest
-  _GITHUB_OWNER: "dsyouness"
-  _GITHUB_REPO: "retail-etl-gcp"
+  _GITHUB_OWNER: "anis-m3ir"
+  _GITHUB_REPO: "GCP-ETL"
 
 options:
   logging: CLOUD_LOGGING_ONLY
+
+serviceAccount: 'projects/retail-etl-489114/serviceAccounts/retail-etl-sa@retail-etl-489114.iam.gserviceaccount.com'

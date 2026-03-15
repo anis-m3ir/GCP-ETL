@@ -196,6 +196,20 @@ resource "google_project_iam_member" "eventarc_storage_check" {
   member  = "serviceAccount:${google_service_account.service_account.email}"
 }
 
+# Permission storage sur le bucket de state Terraform
+resource "google_project_iam_member" "storage_object_admin" {
+  project = var.project_id
+  role    = "roles/storage.objectAdmin"
+  member  = "serviceAccount:${google_service_account.service_account.email}"
+}
+
+# Permission logging pour Cloud Build
+resource "google_project_iam_member" "logging_writer" {
+  project = var.project_id
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.service_account.email}"
+}
+
 # terraform to grant roles eventarc admin to service account
 resource "google_project_iam_member" "gcs_pubsub_publisher" {
   project = var.project_id

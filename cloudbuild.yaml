@@ -88,8 +88,6 @@ steps:
           -var="dataset_id=${_DATASET_ID}" \
           -var="bucket_name=${_BUCKET_NAME}" \
           -var="dbt_job_name=${_DBT_JOB_NAME}" \
-          -var="environment=${_ENVIRONMENT}" \
-          -var="monthly_budget_amount=${_MONTHLY_BUDGET}" \
           -out=tfplan
 
   # ===========================================================================

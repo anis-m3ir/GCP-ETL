@@ -64,7 +64,8 @@ variable "dataset_id" {
 
 
 variable "ar_repo_name" {
-  description = "GCP project ID"
+  description = "Artifact repo for dbt"
+  default = "dbt-images"
   type        = string
 }
 
@@ -79,6 +80,7 @@ variable "dbt_image" {
 } 
 variable "retail_etl_sa_email" {
   description = "Service account email for pipeline orchestration"
+  default = "retail-etl-sa@scratch-retail-etl.iam.gserviceaccount.com"
   type        = string
 }
 variable "workflow_name" {
@@ -88,23 +90,28 @@ variable "workflow_name" {
 
 variable "github_owner" {
   description = "Githube Owner"
+  default = "anis-m3ir"
   type        = string
 } 
 variable "github_repo_name" {
-  description = "Cloud Build service account name"
+  description = "git repo name"
+  default = "GCP-ETL"
   type        = string
 } 
 variable "cloudbuild_trigger_branch" {
   description = "Cloud Build service account name"
+  default = ".*"
   type        = string
 }
 
 variable "tf_state_bucket" {
 description = "TF STATE BUCKET NME"
+default = "scratch-retail-etl-tfstate"
   type        = string
 }
 
 variable "tf_state_prefix" {
   description = "Cloud Build service account name"
+  default = "terraform/"
   type        = string
 }

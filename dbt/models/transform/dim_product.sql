@@ -6,6 +6,6 @@ SELECT DISTINCT
 		StockCode AS stock_code,
     Description AS description,
     UnitPrice AS price
-FROM {{ source('mtech_retail_dsy', 'raw_invoice') }}
+FROM {{ source('retail_ague', 'raw_invoice') }}
 WHERE StockCode IS NOT NULL
 AND cast(UnitPrice as float64) > 0

@@ -1,7 +1,7 @@
 dbtetl:
   outputs:
     dev: # Method 1: Service Account (Production - Cloud Run)
-      dataset: mtech_retail_dsy
+      dataset: retail_ague
       job_execution_timeout_seconds: 300
       job_retries: 1
       location: EU
@@ -12,7 +12,7 @@ dbtetl:
       threads: 1
       type: bigquery
     dev_local: # Method 2: OAuth (Local Development)
-      dataset: mtech_retail_dsy
+      dataset: retail_ague
       job_execution_timeout_seconds: 300
       job_retries: 1
       location: EU
